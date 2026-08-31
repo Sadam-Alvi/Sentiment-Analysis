@@ -5,26 +5,22 @@ from sentence_transformers import SentenceTransformer
 
 
 # Load BGE embedding model
+from sentence_transformers import SentenceTransformer
+
 @st.cache_resource
-def load_embedding_model():
-    return SentenceTransformer(
+def load_model_and_embeddings():
+
+    with open("SGD_Model.pkl", "rb") as f:
+        model = pickle.load(f)
+
+    embeddings = SentenceTransformer(
         "BAAI/bge-small-en-v1.5",
         device="cpu"
     )
 
+    return model, embeddings
 
-embeddings = load_embedding_model()
-
-
-# Load SGD model
-@st.cache_resource
-def load_model():
-    with open("SGD_Model.pkl", "rb") as f:
-        return pickle.load(f)
-
-
-model = load_model()
-
+model, embeddings = load_model_and_embeddings()
 
 def clean_processing(text):
     """Clean and preprocess the input text."""
