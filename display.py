@@ -1,105 +1,258 @@
+# import streamlit as st
+# import re
+# import pickle
+# # from scipy.sparse import hstack
+# from sentence_transformers import SentenceTransformer
+
+# # embeddings = SentenceTransformer("BAAI/bge-small-en-v1.5")
+
+# @st.cache_resource
+# def load_embedding_model():
+#     return SentenceTransformer(
+#         "BAAI/bge-small-en-v1.5",
+#         device="cpu"
+#     )
+
+# embeddings = load_embedding_model()
+
+# # Load model and vectorizers
+# @st.cache_resource
+# def load_model_and_vectorizers():
+#     with open("SGD_Model.pkl", "rb") as f:
+#         model = pickle.load(f)
+#     embeddings = SentenceTransformer("BAAI/bge-small-en-v1.5")
+#     return model, emembeddings
+
+
+# # model, word_vectorizer, char_vectorizer = load_model_and_vectorizers()
+# model,embeddings = load_model_and_vectorizers()
+
+# def clean_processing(text):
+#     """Clean and preprocess the input text."""
+#     if not isinstance(text, str):
+#         return ""
+    
+#     text = text.lower()
+#     text = re.sub(r"<.*?>", " ", text)          # Remove HTML tags
+#     text = re.sub(r"http\S+", " ", text)        # Remove URLs
+#     text = re.sub(r"[^a-zA-Z0-9\s']", " ", text) # Keep letters, numbers, apostrophes
+#     text = re.sub(r"\s+", " ", text).strip()    # Remove extra spaces
+#     return text
+
+
+# # Streamlit UI
+# st.title("Comment's Sentiment Classifier")
+# st.markdown("Enter text to determine whether the sentiment is **positive** or **negative**.")
+
+# # Example texts
+# positive_example = "I absolutely love this product! It works perfectly and exceeded all my expectations. Highly recommended."
+# negative_example = "This is the worst experience I've ever had. The product broke immediately and customer service was terrible."
+
+# # Example buttons
+# st.markdown("**Try an example:**")
+# col1, col2 = st.columns(2)
+# with col1:
+#     if st.button("😊 Positive Example"):
+#         st.session_state["user_text"] = positive_example
+# with col2:
+#     if st.button("😞 Negative Example"):
+#         st.session_state["user_text"] = negative_example
+
+# # Initialize session state
+# if "user_text" not in st.session_state:
+#     st.session_state["user_text"] = ""
+
+# text_input = st.text_area(
+#     "Enter your text:", 
+#     value=st.session_state["user_text"],
+#     height=200,
+#     placeholder="Paste the text here..."
+# )
+
+# if st.button("Check Sentiment"):
+#     if not text_input or not text_input.strip():
+#         st.warning("Please enter some text to classify.")
+#     else:
+#         with st.spinner("Processing..."):
+#             # Preprocess
+#             cleaned_text = clean_processing(text_input)
+            
+#             if not cleaned_text:
+#                 st.error("Unable to process the provided text.")
+#             else:
+#                 # put here
+#                 X = embeddings.encode(
+#                         [cleaned_text],
+#                         normalize_embeddings=True,
+#                         show_progress_bar=True)
+                
+#                 # Predict
+#                 prediction = model.predict(X)[0]
+                
+#                 # Display result
+#                 if prediction == 1:
+#                     st.success("✅ The text is classified as **Positive**.")
+#                 else:
+#                     st.error("❌ The text is classified as **Negative**.")
+                
+#                 # Optional: Show confidence/probability
+#                 if hasattr(model, "predict_proba"):
+#                     proba = model.predict_proba(X)[0]
+#                     st.info(f"Confidence: Positive = {proba[1]:.2%}, Negative = {proba[0]:.2%}")
+
+# # Sidebar information
+# st.sidebar.header("About")
+# st.sidebar.info(
+#     "This application uses an SGD classifier with BAAI/bge-small-en-v1.5 features.\n\n"
+#     "Text is cleaned and transformed using pre-fitted vectorizers before prediction."
+# )
+
 import streamlit as st
 import re
 import pickle
-# from scipy.sparse import hstack
 from sentence_transformers import SentenceTransformer
 
-embeddings = SentenceTransformer("BAAI/bge-small-en-v1.5")
 
-
-
-# Load model and vectorizers
+# Load BGE embedding model
 @st.cache_resource
-def load_model_and_vectorizers():
+def load_embedding_model():
+    return SentenceTransformer(
+        "BAAI/bge-small-en-v1.5",
+        device="cpu"
+    )
+
+
+embeddings = load_embedding_model()
+
+
+# Load SGD model
+@st.cache_resource
+def load_model():
     with open("SGD_Model.pkl", "rb") as f:
-        model = pickle.load(f)
-    return model
-    # with open("Char_vector.pkl", "rb") as f:
-    #     char_vectorizer = pickle.load(f)
-    # with open("Word_vector.pkl", "rb") as f:
-    #     word_vectorizer = pickle.load(f)
-    # return model, word_vectorizer, char_vectorizer
+        return pickle.load(f)
 
 
-# model, word_vectorizer, char_vectorizer = load_model_and_vectorizers()
-model = load_model_and_vectorizers()
+model = load_model()
+
 
 def clean_processing(text):
     """Clean and preprocess the input text."""
     if not isinstance(text, str):
         return ""
-    
+
     text = text.lower()
-    text = re.sub(r"<.*?>", " ", text)          # Remove HTML tags
-    text = re.sub(r"http\S+", " ", text)        # Remove URLs
-    text = re.sub(r"[^a-zA-Z0-9\s']", " ", text) # Keep letters, numbers, apostrophes
-    text = re.sub(r"\s+", " ", text).strip()    # Remove extra spaces
+    text = re.sub(r"<.*?>", " ", text)
+    text = re.sub(r"http\S+", " ", text)
+    text = re.sub(r"[^a-zA-Z0-9\s']", " ", text)
+    text = re.sub(r"\s+", " ", text).strip()
+
     return text
 
 
 # Streamlit UI
 st.title("Comment's Sentiment Classifier")
-st.markdown("Enter text to determine whether the sentiment is **positive** or **negative**.")
+
+st.markdown(
+    "Enter text to determine whether the sentiment is "
+    "**positive** or **negative**."
+)
+
 
 # Example texts
-positive_example = "I absolutely love this product! It works perfectly and exceeded all my expectations. Highly recommended."
-negative_example = "This is the worst experience I've ever had. The product broke immediately and customer service was terrible."
+positive_example = (
+    "I absolutely love this product! It works perfectly "
+    "and exceeded all my expectations. Highly recommended."
+)
+
+negative_example = (
+    "This is the worst experience I've ever had. "
+    "The product broke immediately and customer service was terrible."
+)
+
 
 # Example buttons
 st.markdown("**Try an example:**")
+
 col1, col2 = st.columns(2)
+
 with col1:
     if st.button("😊 Positive Example"):
         st.session_state["user_text"] = positive_example
+
 with col2:
     if st.button("😞 Negative Example"):
         st.session_state["user_text"] = negative_example
+
 
 # Initialize session state
 if "user_text" not in st.session_state:
     st.session_state["user_text"] = ""
 
+
 text_input = st.text_area(
-    "Enter your text:", 
+    "Enter your text:",
     value=st.session_state["user_text"],
     height=200,
     placeholder="Paste the text here..."
 )
 
+
+# Prediction
 if st.button("Check Sentiment"):
+
     if not text_input or not text_input.strip():
+
         st.warning("Please enter some text to classify.")
+
     else:
+
         with st.spinner("Processing..."):
-            # Preprocess
+
+            # Clean text
             cleaned_text = clean_processing(text_input)
-            
+
             if not cleaned_text:
+
                 st.error("Unable to process the provided text.")
+
             else:
-                # put here
+
+                # Convert text to BGE embedding
                 X = embeddings.encode(
-                        [cleaned_text],
-                        normalize_embeddings=True,
-                        show_progress_bar=True)
-                
-                # Predict
+                    [cleaned_text],
+                    normalize_embeddings=True
+                )
+
+                # Predict sentiment
                 prediction = model.predict(X)[0]
-                
+
                 # Display result
                 if prediction == 1:
-                    st.success("✅ The text is classified as **Positive**.")
+                    st.success(
+                        "✅ The text is classified as **Positive**."
+                    )
                 else:
-                    st.error("❌ The text is classified as **Negative**.")
-                
-                # Optional: Show confidence/probability
-                if hasattr(model, "predict_proba"):
-                    proba = model.predict_proba(X)[0]
-                    st.info(f"Confidence: Positive = {proba[1]:.2%}, Negative = {proba[0]:.2%}")
+                    st.error(
+                        "❌ The text is classified as **Negative**."
+                    )
 
-# Sidebar information
+                # Confidence
+                if hasattr(model, "predict_proba"):
+
+                    proba = model.predict_proba(X)[0]
+
+                    st.info(
+                        f"Confidence: Positive = {proba[1]:.2%}, "
+                        f"Negative = {proba[0]:.2%}"
+                    )
+
+
+# Sidebar
 st.sidebar.header("About")
+
 st.sidebar.info(
-    "This application uses an SGD classifier with BAAI/bge-small-en-v1.5 features.\n\n"
-    "Text is cleaned and transformed using pre-fitted vectorizers before prediction."
+    "This application uses an SGD classifier with "
+    "BAAI/bge-small-en-v1.5 embeddings.\n\n"
+    "Text is cleaned and converted into semantic embeddings "
+    "before prediction."
 )
